@@ -24,6 +24,10 @@ func BenchmarkWhitespaceArrayInlined(b *testing.B) {
 	withFixtures(b, benchmarkWhitespaceArrayInlined)
 }
 
+func BenchmarkWhitespaceCheck(b *testing.B) {
+	withFixtures(b, benchmarkWhitespaceCheck)
+}
+
 func BenchmarkWhitespaceShift(b *testing.B) {
 	withFixtures(b, benchmarkWhitespaceShift)
 }
@@ -176,6 +180,24 @@ func benchmarkWhitespaceIfInlined(b *testing.B, input []byte, want int) {
 		n := 0
 		for _, c := range input {
 			if c <= ' ' && (c == ' ' || c == '\n' || c == '\t' || c == '\r') {
+				n++
+			}
+		}
+		if n != want {
+			b.Fatalf("expected: %v, got: %v", want, n)
+		}
+	}
+}
+
+func isWhitespaceCheck(c byte) bool {
+	return c <= ' ' && whitespace[c]
+}
+
+func benchmarkWhitespaceCheck(b *testing.B, input []byte, want int) {
+	for i := 0; i < b.N; i++ {
+		n := 0
+		for _, c := range input {
+			if isWhitespaceCheck(c) {
 				n++
 			}
 		}
