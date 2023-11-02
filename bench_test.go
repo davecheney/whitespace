@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -16,48 +16,29 @@ var fixtures = []struct {
 	{"warandpeace.txt", 649134},
 }
 
-func BenchmarkWhitespaceArray(b *testing.B) {
-	withFixtures(b, benchmarkWhitespaceArray)
+func BenchmarkWhitespace(b *testing.B) {
+	b.Run("array", withFixtures(b, benchmarkWhitespaceArray))
+	b.Run("array (inlined)", withFixtures(b, benchmarkWhitespaceArrayInlined))
+	b.Run("check", withFixtures(b, benchmarkWhitespaceCheck))
+	b.Run("shift", withFixtures(b, benchmarkWhitespaceShift))
+	b.Run("shift (inlined)", withFixtures(b, benchmarkWhitespaceShiftInlined))
+	b.Run("switch", withFixtures(b, benchmarkWhitespaceSwitch))
+	b.Run("if", withFixtures(b, benchmarkWhitespaceIf))
+	b.Run("if (inlined)", withFixtures(b, benchmarkWhitespaceIfInlined))
 }
 
-func BenchmarkWhitespaceArrayInlined(b *testing.B) {
-	withFixtures(b, benchmarkWhitespaceArrayInlined)
-}
-
-func BenchmarkWhitespaceCheck(b *testing.B) {
-	withFixtures(b, benchmarkWhitespaceCheck)
-}
-
-func BenchmarkWhitespaceShift(b *testing.B) {
-	withFixtures(b, benchmarkWhitespaceShift)
-}
-
-func BenchmarkWhitespaceShiftInlined(b *testing.B) {
-	withFixtures(b, benchmarkWhitespaceShiftInlined)
-}
-
-func BenchmarkWhitespaceSwitch(b *testing.B) {
-	withFixtures(b, benchmarkWhitespaceSwitch)
-}
-
-func BenchmarkWhitespaceIf(b *testing.B) {
-	withFixtures(b, benchmarkWhitespaceIf)
-}
-
-func BenchmarkWhitespaceIfInlined(b *testing.B) {
-	withFixtures(b, benchmarkWhitespaceIfInlined)
-}
-
-func withFixtures(b *testing.B, fn func(b *testing.B, input []byte, want int)) {
-	for _, fix := range fixtures {
-		data, err := ioutil.ReadFile(filepath.Join("testdata", fix.path))
-		if err != nil {
-			b.Fatal(err)
+func withFixtures(b *testing.B, fn func(b *testing.B, input []byte, want int)) func(b *testing.B) {
+	return func(b *testing.B) {
+		for _, fix := range fixtures {
+			data, err := os.ReadFile(filepath.Join("testdata", fix.path))
+			if err != nil {
+				b.Fatal(err)
+			}
+			b.Run(fix.path, func(b *testing.B) {
+				b.SetBytes(int64(len(data)))
+				fn(b, data, fix.want)
+			})
 		}
-		b.Run(fix.path, func(b *testing.B) {
-			b.SetBytes(int64(len(data)))
-			fn(b, data, fix.want)
-		})
 	}
 }
 
